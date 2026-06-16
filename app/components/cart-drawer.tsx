@@ -3,7 +3,7 @@ import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { useCart } from "../context/cart-context";
 
-const WHATSAPP = "5545991447046";
+const WHATSAPP = "5545991517308";
 
 function buildMessage(items: { code: string; productName: string; qty: number }[]) {
   const lines = items.map((i) => `• ${i.code} — ${i.productName} — ${i.qty} un`).join("\n");

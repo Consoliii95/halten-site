@@ -457,7 +457,7 @@ export default async function ProductDetailPage({
 
               {/* WhatsApp CTA */}
               <a
-                href={`https://wa.me/5545991447046?text=${whatsappMsg}`}
+                href={`https://wa.me/5545991517308?text=${whatsappMsg}`}
                 target="_blank"
                 rel="noreferrer"
                 style={{

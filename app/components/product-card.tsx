@@ -46,7 +46,7 @@ export function ProductCard({ product }: ProductCardProps) {
             </Link>
           ) : (
             <a
-              href="https://wa.me/5545991447046"
+              href="https://wa.me/5545991517308"
               target="_blank"
               rel="noreferrer"
               className="inline-flex w-full items-center justify-center rounded-full border border-[var(--blue)] px-5 py-3 text-sm font-semibold text-[var(--blue)] transition hover:bg-[var(--blue)] hover:text-white"

@@ -15,7 +15,7 @@ const navLinks = [
   { href: "/contato", label: "Contato" },
 ];
 
-const WA_LINK = "https://wa.me/5545991447046";
+const WA_LINK = "https://wa.me/5545991517308";
 
 export function Navbar() {
   const router = useRouter();

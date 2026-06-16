@@ -58,7 +58,7 @@ export function Footer() {
             <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
               {/* WhatsApp */}
               <a
-                href="https://wa.me/5545991447046"
+                href="https://wa.me/5545991517308"
                 target="_blank"
                 rel="noreferrer"
                 aria-label="WhatsApp"
@@ -151,12 +151,12 @@ export function Footer() {
                   WhatsApp
                 </p>
                 <a
-                  href="https://wa.me/5545991447046"
+                  href="https://wa.me/5545991517308"
                   target="_blank"
                   rel="noreferrer"
                   style={{ fontSize: 13, color: "rgba(255,255,255,0.75)", fontFamily: "var(--font-mono)", textDecoration: "none" }}
                 >
-                  (45) 99144-7046
+                  (45) 99151-7308
                 </a>
               </div>
               <div>

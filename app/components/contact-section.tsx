@@ -13,7 +13,7 @@ export function ContactSection() {
             <div className="space-y-3 text-sm">
               <p className="font-semibold text-[var(--ink)]">contato@halten.ind.br</p>
               <p>Telefone: (45) 3197-2130</p>
-              <p>WhatsApp: (45) 99144-7046</p>
+              <p>WhatsApp: (45) 99151-7308</p>
               <p>R. Alba Vieira, 653 — Cataratas, Cascavel/PR — 85818-630</p>
             </div>
           </div>

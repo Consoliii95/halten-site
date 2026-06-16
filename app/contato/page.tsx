@@ -13,7 +13,7 @@ export default function ContactPage() {
     const text = encodeURIComponent(
       `Olá! Meu nome é *${form.name}*.\n\n${form.message}\n\nE-mail: ${form.email}${form.phone ? `\nTelefone: ${form.phone}` : ""}`
     );
-    window.open(`https://wa.me/5545991447046?text=${text}`, "_blank");
+    window.open(`https://wa.me/5545991517308?text=${text}`, "_blank");
   };
 
   const field: React.CSSProperties = {
@@ -120,7 +120,7 @@ export default function ContactPage() {
 
                 <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
                   <a
-                    href="https://wa.me/5545991447046"
+                    href="https://wa.me/5545991517308"
                     target="_blank"
                     rel="noreferrer"
                     style={{
@@ -151,7 +151,7 @@ export default function ContactPage() {
                     </div>
                     <div>
                       <p className="font-sans" style={{ fontSize: 14, fontWeight: 600, color: "var(--ink)", margin: 0 }}>
-                        (45) 99144-7046
+                        (45) 99151-7308
                       </p>
                       <p style={{ fontSize: 12, color: "#16a34a", fontFamily: "var(--font-mono)", margin: 0 }}>
                         WhatsApp · atendimento comercial

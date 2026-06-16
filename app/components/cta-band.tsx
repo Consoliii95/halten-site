@@ -1,4 +1,4 @@
-const WA_LINK = "https://wa.me/5545991447046";
+const WA_LINK = "https://wa.me/5545991517308";
 
 export function CtaBand() {
   return (
@@ -177,7 +177,7 @@ export function CtaBand() {
                 </svg>
               ),
               label: "WHATSAPP COMERCIAL",
-              value: "(45) 99144-7046",
+              value: "(45) 99151-7308",
               href: WA_LINK,
             },
             {
