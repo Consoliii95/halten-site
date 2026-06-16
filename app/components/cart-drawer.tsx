@@ -15,7 +15,12 @@ export function CartDrawer() {
   const { items, removeItem, updateQty, clearCart } = useCart();
   const [open, setOpen] = useState(false);
 
-  if (pathname?.startsWith("/admin")) return null;
+  if (
+    pathname?.startsWith("/admin") ||
+    pathname?.startsWith("/links") ||
+    pathname?.startsWith("/catalogo")
+  )
+    return null;
 
   const total = items.reduce((s, i) => s + i.qty, 0);
 
