@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useTransition } from "react";
-import { FileSpreadsheet, Loader2, Trash2, Check, AlertCircle, Plus, X } from "lucide-react";
+import { FileSpreadsheet, Loader2, Trash2, Check, AlertCircle, Plus, X, ChevronUp, ChevronDown } from "lucide-react";
 import * as XLSX from "xlsx";
 import { saveProductConversions, deleteProductConversions } from "./conversion-actions";
 
@@ -42,6 +42,32 @@ export function ProductConversionSection({ productId, existingConversion }: Prop
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
+  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
+
+  function handleDrop(targetIdx: number) {
+    if (dragIdx === null || dragIdx === targetIdx) return;
+    setRows(prev => {
+      const next = [...prev];
+      const [moved] = next.splice(dragIdx, 1);
+      next.splice(targetIdx, 0, moved);
+      return next;
+    });
+    setDragIdx(null);
+    setDragOverIdx(null);
+    setSuccess(false);
+  }
+
+  function moveRow(idx: number, dir: -1 | 1) {
+    const target = idx + dir;
+    if (target < 0 || target >= rows.length) return;
+    setRows(prev => {
+      const next = [...prev];
+      [next[idx], next[target]] = [next[target], next[idx]];
+      return next;
+    });
+    setSuccess(false);
+  }
 
   function addRow() {
     setRows(prev => [...prev, { codigo_halten: "", codigos_originais: "" }]);
@@ -152,25 +178,51 @@ export function ProductConversionSection({ productId, existingConversion }: Prop
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, fontFamily: "var(--font-mono)" }}>
           <thead>
             <tr style={{ background: "#111827" }}>
+              <th style={{ width: 28 }} />
               <th style={{ padding: "10px 14px", textAlign: "left", color: "white", fontWeight: 700, letterSpacing: "0.06em", width: "28%" }}>
                 CÓDIGO HALTEN
               </th>
               <th style={{ padding: "10px 14px", textAlign: "left", color: "white", fontWeight: 700, letterSpacing: "0.06em" }}>
                 CÓDIGOS ORIGINAIS
               </th>
+              <th style={{ width: 52 }} />
               <th style={{ width: 36 }} />
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 && (
               <tr>
-                <td colSpan={3} style={{ padding: "20px 16px", textAlign: "center", color: "var(--ink-mute)", fontSize: 13, fontFamily: "var(--font-mono)" }}>
+                <td colSpan={5} style={{ padding: "20px 16px", textAlign: "center", color: "var(--ink-mute)", fontSize: 13, fontFamily: "var(--font-mono)" }}>
                   Nenhuma linha ainda. Clique em "+ Adicionar linha" abaixo.
                 </td>
               </tr>
             )}
             {rows.map((row, i) => (
-              <tr key={i} style={{ background: i % 2 === 0 ? "white" : "#f8fafc", borderBottom: "1px solid var(--line)" }}>
+              <tr
+                key={i}
+                onDragOver={(e) => { e.preventDefault(); setDragOverIdx(i); }}
+                onDrop={() => handleDrop(i)}
+                onDragEnd={() => { setDragIdx(null); setDragOverIdx(null); }}
+                style={{
+                  background: dragOverIdx === i ? "#eff6ff" : i % 2 === 0 ? "white" : "#f8fafc",
+                  borderBottom: "1px solid var(--line)",
+                  opacity: dragIdx === i ? 0.4 : 1,
+                  outline: dragOverIdx === i && dragIdx !== null ? "2px solid var(--blue)" : "none",
+                  outlineOffset: -2,
+                }}
+              >
+                <td
+                  draggable
+                  onDragStart={() => setDragIdx(i)}
+                  title="Arraste para reordenar"
+                  style={{ padding: "3px 4px", textAlign: "center", cursor: "grab" }}
+                >
+                  <svg width="12" height="18" viewBox="0 0 12 18" fill="none" style={{ display: "block", margin: "0 auto" }}>
+                    {[0, 6, 12].map(y => [2, 8].map(x => (
+                      <circle key={`${x}-${y}`} cx={x} cy={y + 3} r={1.5} fill="#94a3b8" />
+                    )))}
+                  </svg>
+                </td>
                 <td style={{ padding: "3px 6px" }}>
                   <input
                     type="text"
@@ -192,6 +244,26 @@ export function ProductConversionSection({ productId, existingConversion }: Prop
                     onFocus={(e) => (e.target.style.background = "#eff6ff")}
                     onBlur={(e) => (e.target.style.background = "transparent")}
                   />
+                </td>
+                <td style={{ padding: "3px 2px", textAlign: "center", whiteSpace: "nowrap" }}>
+                  <button
+                    type="button"
+                    onClick={() => moveRow(i, -1)}
+                    disabled={i === 0}
+                    title="Mover para cima"
+                    style={{ background: "none", border: "none", cursor: i === 0 ? "default" : "pointer", color: i === 0 ? "#e2e8f0" : "#94a3b8", padding: 2, lineHeight: 0 }}
+                  >
+                    <ChevronUp size={14} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => moveRow(i, 1)}
+                    disabled={i === rows.length - 1}
+                    title="Mover para baixo"
+                    style={{ background: "none", border: "none", cursor: i === rows.length - 1 ? "default" : "pointer", color: i === rows.length - 1 ? "#e2e8f0" : "#94a3b8", padding: 2, lineHeight: 0 }}
+                  >
+                    <ChevronDown size={14} />
+                  </button>
                 </td>
                 <td style={{ padding: "3px 6px", textAlign: "center" }}>
                   <button
