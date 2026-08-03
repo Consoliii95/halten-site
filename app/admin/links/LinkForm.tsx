@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import Link from "next/link";
 import { Loader2, AlertCircle, Upload, X, Link as LinkIconLucide } from "lucide-react";
 import { LINK_ICON_OPTIONS, LinkIcon, type LinkIconKey } from "../../links/link-icons";
+import { uploadDirect } from "../upload-client";
 
 type LinkRow = {
   id?: string;
@@ -50,6 +51,7 @@ export function LinkForm({ link, action, isNew }: Props) {
   const [destFileName, setDestFileName] = useState<string | null>(null);
   const [iconPreview, setIconPreview] = useState<string | null>(link?.icon_url ?? null);
   const [isPending, setIsPending] = useState(false);
+  const [progress, setProgress] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const destFileRef = useRef<HTMLInputElement>(null);
@@ -68,8 +70,29 @@ export function LinkForm({ link, action, isNew }: Props) {
 
     try {
       const fd = new FormData(e.currentTarget);
-      fd.set("url_existing", link?.url ?? "");
-      fd.set("icon_url_existing", link?.icon_url ?? "");
+      const destFile = destFileRef.current?.files?.[0];
+      const iconFile = iconFileRef.current?.files?.[0];
+
+      // Os arquivos vão direto do navegador para o Storage; a Server Action
+      // recebe só URLs (o corpo da requisição precisa ficar abaixo de 4.5 MB).
+      fd.delete("dest_file");
+      fd.delete("icon_file");
+
+      // Destino: arquivo enviado tem prioridade; senão o link colado; senão o atual.
+      let url = (fd.get("url") as string)?.trim() || link?.url || "";
+      if (destFile && destFile.size > 0) {
+        setProgress(0);
+        url = await uploadDirect(destFile, "links", setProgress);
+        setProgress(null);
+      }
+      fd.set("url", url);
+
+      let iconUrl = link?.icon_url ?? "";
+      if (icon === "custom" && iconFile && iconFile.size > 0) {
+        iconUrl = await uploadDirect(iconFile, "links");
+      }
+      fd.set("icon_url", icon === "custom" ? iconUrl : "");
+
       await action(fd);
     } catch (err: unknown) {
       if (
@@ -82,6 +105,7 @@ export function LinkForm({ link, action, isNew }: Props) {
         throw err;
       }
       setError(err instanceof Error ? err.message : "Erro desconhecido ao salvar o link.");
+      setProgress(null);
       setIsPending(false);
     }
   }
@@ -144,6 +168,17 @@ export function LinkForm({ link, action, isNew }: Props) {
           >
             remover
           </button>
+        )}
+
+        {progress !== null && (
+          <div style={{ marginTop: 12 }}>
+            <div style={{ height: 6, borderRadius: 999, background: "var(--line)", overflow: "hidden" }}>
+              <div style={{ width: `${progress}%`, height: "100%", background: "var(--blue)", transition: "width 0.2s ease" }} />
+            </div>
+            <p style={{ fontSize: 11, color: "var(--ink-dim)", fontFamily: "var(--font-mono)", margin: "6px 0 0" }}>
+              Enviando arquivo… {progress}%
+            </p>
+          </div>
         )}
       </div>
 
@@ -226,7 +261,13 @@ export function LinkForm({ link, action, isNew }: Props) {
           style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "12px 28px", borderRadius: 999, background: isPending ? "#94a3b8" : "var(--blue)", color: "white", fontSize: 14, fontWeight: 700, border: "none", cursor: isPending ? "not-allowed" : "pointer" }}
         >
           {isPending && <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} />}
-          {isPending ? "Salvando…" : isNew ? "Criar Link" : "Salvar Alterações"}
+          {progress !== null
+            ? `Enviando… ${progress}%`
+            : isPending
+              ? "Salvando…"
+              : isNew
+                ? "Criar Link"
+                : "Salvar Alterações"}
         </button>
         <Link href="/admin/links" className="font-sans" style={{ padding: "12px 24px", borderRadius: 999, border: "1.5px solid var(--line)", color: "var(--ink-mid)", fontSize: 14, fontWeight: 600, textDecoration: "none" }}>
           Cancelar

@@ -3,6 +3,7 @@
 import { useState, useRef } from "react";
 import Link from "next/link";
 import { X, ImageIcon, Loader2, AlertCircle } from "lucide-react";
+import { uploadDirect } from "../upload-client";
 
 type Banner = {
   id?: string;
@@ -49,6 +50,7 @@ export function BannerForm({ banner, action, isNew }: Props) {
   const [preview, setPreview] = useState<string | null>(banner?.image_url ?? null);
   const [hasNewFile, setHasNewFile] = useState(false);
   const [isPending, setIsPending] = useState(false);
+  const [progress, setProgress] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -72,17 +74,19 @@ export function BannerForm({ banner, action, isNew }: Props) {
 
     try {
       const fd = new FormData(e.currentTarget);
+      const imageFile = fileRef.current?.files?.[0];
 
-      // Garante que a URL existente vai corretamente quando não há novo arquivo
-      if (!hasNewFile) {
-        fd.set("image_url_existing", banner?.image_url ?? "");
+      // A imagem vai direto do navegador para o Storage; a Server Action recebe
+      // só a URL (o corpo da requisição precisa ficar abaixo de 4.5 MB).
+      fd.delete("image_file");
+
+      let imageUrl = banner?.image_url ?? "";
+      if (hasNewFile && imageFile && imageFile.size > 0) {
+        setProgress(0);
+        imageUrl = await uploadDirect(imageFile, "banners", setProgress);
+        setProgress(null);
       }
-
-      console.log("[BannerForm] Submetendo banner...", {
-        hasNewFile,
-        existingUrl: banner?.image_url,
-        imageFile: fd.get("image_file"),
-      });
+      fd.set("image_url_existing", imageUrl);
 
       await action(fd);
 
@@ -104,6 +108,7 @@ export function BannerForm({ banner, action, isNew }: Props) {
       const message =
         err instanceof Error ? err.message : "Erro desconhecido ao salvar banner.";
       setError(message);
+      setProgress(null);
       setIsPending(false);
     }
   }
@@ -228,9 +233,20 @@ export function BannerForm({ banner, action, isNew }: Props) {
             <ImageIcon size={28} color="var(--ink-mute)" />
             <span>Clique para selecionar imagem</span>
             <span style={{ fontSize: 11, color: "var(--ink-mute)" }}>
-              JPG, PNG, WebP — máx. 5 MB
+              JPG, PNG, WebP
             </span>
           </button>
+        )}
+
+        {progress !== null && (
+          <div style={{ marginTop: 12 }}>
+            <div style={{ height: 6, borderRadius: 999, background: "var(--line)", overflow: "hidden" }}>
+              <div style={{ width: `${progress}%`, height: "100%", background: "var(--blue)", transition: "width 0.2s ease" }} />
+            </div>
+            <p style={{ fontSize: 11, color: "var(--ink-dim)", fontFamily: "var(--font-mono)", margin: "6px 0 0" }}>
+              Enviando imagem… {progress}%
+            </p>
+          </div>
         )}
       </div>
 
@@ -318,7 +334,13 @@ export function BannerForm({ banner, action, isNew }: Props) {
           }}
         >
           {isPending && <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} />}
-          {isPending ? "Salvando…" : isNew ? "Criar Banner" : "Salvar Alterações"}
+          {progress !== null
+            ? `Enviando… ${progress}%`
+            : isPending
+              ? "Salvando…"
+              : isNew
+                ? "Criar Banner"
+                : "Salvar Alterações"}
         </button>
         <Link
           href="/admin/banners"

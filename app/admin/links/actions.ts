@@ -4,55 +4,28 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getSupabaseAdmin } from "../../../lib/supabase";
 
-async function uploadToStorage(file: File, bucket: string): Promise<string> {
-  const db = getSupabaseAdmin();
-
-  const { error: bucketErr } = await db.storage.createBucket(bucket, { public: true });
-  if (bucketErr && !bucketErr.message.includes("already exists")) {
-    console.error("[links/actions] Erro ao criar bucket:", bucketErr.message);
-  }
-
-  const ext = file.name.split(".").pop() ?? "bin";
-  const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-
-  const { error: uploadErr } = await db.storage.from(bucket).upload(path, file, {
-    contentType: file.type,
-    upsert: false,
-  });
-  if (uploadErr) throw new Error(`Falha no upload do arquivo: ${uploadErr.message}`);
-
-  return db.storage.from(bucket).getPublicUrl(path).data.publicUrl;
-}
-
 function optionalText(raw: FormDataEntryValue | null): string | null {
   const value = (raw as string | null)?.trim();
   return value ? value : null;
 }
 
-/** Destino: arquivo enviado tem prioridade; senão usa o link colado; senão mantém o existente. */
-async function resolveUrl(formData: FormData): Promise<string | null> {
-  const file = formData.get("dest_file");
-  if (file instanceof File && file.size > 0) {
-    return uploadToStorage(file, "links");
-  }
-  return optionalText(formData.get("url")) ?? optionalText(formData.get("url_existing"));
-}
+/**
+ * Arquivos (PDF do catálogo, ícone) sobem do navegador direto para o Storage
+ * antes do submit — ver `LinkForm` e `upload-client`. Aqui só chegam URLs,
+ * que é o que mantém a requisição abaixo do limite de 4.5 MB da Vercel.
+ */
 
 /** Ícone personalizado: usado apenas quando icon === 'custom'. */
-async function resolveIconUrl(formData: FormData, icon: string): Promise<string | null> {
+function resolveIconUrl(formData: FormData, icon: string): string | null {
   if (icon !== "custom") return null;
-  const file = formData.get("icon_file");
-  if (file instanceof File && file.size > 0) {
-    return uploadToStorage(file, "links");
-  }
-  return optionalText(formData.get("icon_url_existing"));
+  return optionalText(formData.get("icon_url"));
 }
 
 export async function createLink(formData: FormData) {
   const db = getSupabaseAdmin();
   const icon = (formData.get("icon") as string) || "link";
-  const url = await resolveUrl(formData);
-  const icon_url = await resolveIconUrl(formData, icon);
+  const url = optionalText(formData.get("url"));
+  const icon_url = resolveIconUrl(formData, icon);
 
   // Nova posição = fim da lista
   const { count } = await db.from("links").select("*", { count: "exact", head: true });
@@ -78,8 +51,8 @@ export async function createLink(formData: FormData) {
 export async function updateLink(id: string, formData: FormData) {
   const db = getSupabaseAdmin();
   const icon = (formData.get("icon") as string) || "link";
-  const url = await resolveUrl(formData);
-  const icon_url = await resolveIconUrl(formData, icon);
+  const url = optionalText(formData.get("url"));
+  const icon_url = resolveIconUrl(formData, icon);
 
   const payload = {
     title: (formData.get("title") as string) || "",
