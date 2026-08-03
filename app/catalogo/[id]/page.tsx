@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getSupabaseAdmin } from "../../../lib/supabase";
 import { Flipbook } from "./Flipbook";
+import { fileVersion } from "./version";
 
 export const dynamic = "force-dynamic";
 
@@ -21,5 +22,10 @@ export default async function CatalogoPage({ params }: { params: Promise<{ id: s
   // Conta o clique (mesma métrica do botão na /links)
   await db.rpc("increment_link_clicks", { link_id: id });
 
-  return <Flipbook fileUrl={`/catalogo/${id}/file`} title={link.title ?? "Catálogo"} />;
+  return (
+    <Flipbook
+      fileUrl={`/catalogo/${id}/file?v=${fileVersion(link.url)}`}
+      title={link.title ?? "Catálogo"}
+    />
+  );
 }
